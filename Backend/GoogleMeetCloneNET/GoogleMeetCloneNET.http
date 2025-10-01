@@ -1,0 +1,6 @@
+@GoogleMeetCloneNET_HostAddress = http://localhost:5263
+
+GET {{GoogleMeetCloneNET_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
