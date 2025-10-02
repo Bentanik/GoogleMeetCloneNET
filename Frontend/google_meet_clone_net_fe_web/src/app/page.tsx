@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { gsap } from "gsap"
 import LobbyLayout from "@/components/layout/lobby-layout"
@@ -43,78 +43,93 @@ export default function LobbyPage() {
     return () => ctx.revert()
   }, [])
 
-  // Release media tracks on unmount
+  // Cleanup media streams on unmount
   useEffect(() => {
     return () => {
       if (stream) {
-        stream.getTracks().forEach((track) => track.stop())
-      }
-    }
-  }, [stream])
-
-  // Lazily request/adjust stream when toggles change
-  useEffect(() => {
-    async function ensureStreamFor(wantVideo: boolean, wantAudio: boolean) {
-      const hasVideo = !!stream?.getVideoTracks().length
-      const hasAudio = !!stream?.getAudioTracks().length
-
-      // If no desired media types, stop and clear
-      if (!wantVideo && !wantAudio) {
-        if (stream) {
-          stream.getTracks().forEach((t) => t.stop())
-        }
-        setStream(null)
-        if (videoRef.current) {
-          videoRef.current.srcObject = null
-        }
-        return
-      }
-
-      // If current stream already matches desired types, just enable/disable tracks
-      if (stream && hasVideo === wantVideo && hasAudio === wantAudio) {
-        stream.getVideoTracks().forEach((t) => (t.enabled = wantVideo))
-        stream.getAudioTracks().forEach((t) => (t.enabled = wantAudio))
-        if (videoRef.current && wantVideo) {
-          videoRef.current.srcObject = stream
-        }
-        if (videoRef.current && !wantVideo) {
-          // keep preview area but without src
-          videoRef.current.srcObject = null
-        }
-        return
-      }
-
-      // Otherwise, (re)request with the exact desired constraints
-      try {
-        const newStream = await navigator.mediaDevices.getUserMedia({
-          video: wantVideo,
-          audio: wantAudio,
+        stream.getTracks().forEach((track) => {
+          track.stop()
+          track.enabled = false
         })
-        // Stop old stream if exists
-        if (stream) stream.getTracks().forEach((t) => t.stop())
-        setStream(newStream)
-        // Attach to video element only if we have video
-        if (videoRef.current) {
-          videoRef.current.srcObject = wantVideo ? newStream : null
-        }
-      } catch (err) {
-        console.error("[lobby] Error requesting media:", err)
+        setStream(null)
+      }
+      // Clear video element
+      if (videoRef.current) {
+        videoRef.current.srcObject = null
       }
     }
+  }, [stream, setStream])
 
+  // Optimized stream management with proper cleanup
+  const ensureStreamFor = useCallback(async (wantVideo: boolean, wantAudio: boolean) => {
+    const hasVideo = !!stream?.getVideoTracks().length
+    const hasAudio = !!stream?.getAudioTracks().length
+
+    // If no desired media types, stop and clear
+    if (!wantVideo && !wantAudio) {
+      if (stream) {
+        stream.getTracks().forEach((t) => {
+          t.stop()
+          t.enabled = false
+        })
+      }
+      setStream(null)
+      if (videoRef.current) {
+        videoRef.current.srcObject = null
+      }
+      return
+    }
+
+    // If current stream already matches desired types, just enable/disable tracks
+    if (stream && hasVideo === wantVideo && hasAudio === wantAudio) {
+      stream.getVideoTracks().forEach((t) => (t.enabled = wantVideo))
+      stream.getAudioTracks().forEach((t) => (t.enabled = wantAudio))
+      if (videoRef.current && wantVideo) {
+        videoRef.current.srcObject = stream
+      }
+      if (videoRef.current && !wantVideo) {
+        videoRef.current.srcObject = null
+      }
+      return
+    }
+
+    // Otherwise, (re)request with the exact desired constraints
+    try {
+      const newStream = await navigator.mediaDevices.getUserMedia({
+        video: wantVideo,
+        audio: wantAudio,
+      })
+      // Stop old stream if exists
+      if (stream) {
+        stream.getTracks().forEach((t) => {
+          t.stop()
+          t.enabled = false
+        })
+      }
+      setStream(newStream)
+      // Attach to video element only if we have video
+      if (videoRef.current) {
+        videoRef.current.srcObject = wantVideo ? newStream : null
+      }
+    } catch (err) {
+      console.error("[lobby] Error requesting media:", err)
+    }
+  }, [stream, setStream])
+
+  useEffect(() => {
     void ensureStreamFor(isVideoEnabled, isAudioEnabled)
-  }, [isVideoEnabled, isAudioEnabled])
+  }, [isVideoEnabled, isAudioEnabled, ensureStreamFor])
 
-  const handleJoinMeeting = () => {
+  const handleJoinMeeting = useCallback(() => {
     if (meetingCode.trim()) {
       router.push(`/meeting/${meetingCode}`)
     }
-  }
+  }, [meetingCode, router])
 
-  const handleNewMeeting = () => {
+  const handleNewMeeting = useCallback(() => {
     const newCode = Math.random().toString(36).substring(2, 10)
     router.push(`/meeting/${newCode}`)
-  }
+  }, [router])
 
   return (
     <>
