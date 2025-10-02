@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
 
-import ThreeDLoginBackground from "@/components/3d-login-background";
+import ThreeDBackground from "@/components/ui/3d-background";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -35,7 +35,7 @@ export default function RootLayout({
       <body
         className={`${poppins.variable} antialiased font-sans`}
       >
-        <ThreeDLoginBackground />
+        <ThreeDBackground />
         {children}
       </body>
     </html>

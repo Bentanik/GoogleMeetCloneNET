@@ -10,8 +10,7 @@ const Title = forwardRef<HTMLHeadingElement, { children: React.ReactNode }>(
     )
 )
 
-Title.displayName = "Title"
+Title.displayName = "Title";
 
-export default Title
-
+export default Title;
 

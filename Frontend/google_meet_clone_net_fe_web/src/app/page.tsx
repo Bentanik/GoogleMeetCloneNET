@@ -1,79 +1,42 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { gsap } from "gsap"
-import { Card } from "@/components/ui/card"
-import Title from "@/components/lobby/Title"
-import VideoPreview from "@/components/lobby/VideoPreview"
-import MeetingOptions from "@/components/lobby/MeetingOptions"
+import LobbyLayout from "@/components/layout/lobby-layout"
+import Title from "@/components/widget/title"
+import VideoPreview from "@/components/widget/video-preview"
+import MeetingOptions from "@/components/widget/meeting-options"
+import { useLobbyStore } from "@/stores/zustand/lobby"
 
 export default function LobbyPage() {
   const router = useRouter()
-  const containerRef = useRef<HTMLDivElement>(null)
-  const cardRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const titleRef = useRef<HTMLHeadingElement>(null)
   const previewRef = useRef<HTMLDivElement>(null)
-  const controlsRef = useRef<HTMLDivElement>(null)
   const optionsRef = useRef<HTMLDivElement>(null)
-  const blob1Ref = useRef<HTMLDivElement>(null)
-  const blob2Ref = useRef<HTMLDivElement>(null)
-  const [meetingCode, setMeetingCode] = useState("")
-  const [isVideoEnabled, setIsVideoEnabled] = useState(false)
-  const [isAudioEnabled, setIsAudioEnabled] = useState(false)
-  const [stream, setStream] = useState<MediaStream | null>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
+  const meetingCode = useLobbyStore((s) => s.meetingCode)
+  const setMeetingCode = useLobbyStore((s) => s.setMeetingCode)
+  const isVideoEnabled = useLobbyStore((s) => s.isVideoEnabled)
+  const isAudioEnabled = useLobbyStore((s) => s.isAudioEnabled)
+  const displayName = useLobbyStore((s) => s.displayName)
+  const setDisplayName = useLobbyStore((s) => s.setDisplayName)
+  const stream = useLobbyStore((s) => s.stream)
+  const setStream = useLobbyStore((s) => s.setStream)
+  const toggleVideo = useLobbyStore((s) => s.toggleVideo)
+  const toggleAudio = useLobbyStore((s) => s.toggleAudio)
 
   useEffect(() => {
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({ defaults: { ease: "power3.out" } })
-      tl.from(containerRef.current, { opacity: 0, duration: 0.6 })
-        .from(
-          cardRef.current,
-          { y: 40, opacity: 0, duration: 0.9 },
-          "<+0.1"
-        )
-        .from(titleRef.current, { y: 20, opacity: 0, duration: 0.6 }, "<+0.1")
-        .from(previewRef.current, { y: 20, opacity: 0, duration: 0.6 }, "<")
-
-      if (controlsRef.current) {
-        const buttons = controlsRef.current.querySelectorAll("button")
-        tl.from(
-          buttons,
-          { y: 12, opacity: 0, stagger: 0.08, duration: 0.4 },
-          "<+0.05"
-        )
-      }
+      tl.from(contentRef.current, { opacity: 0, y: 16, duration: 0.6 })
+        .from(titleRef.current, { y: 16, opacity: 0, duration: 0.5 }, "<+0.05")
+        .from(previewRef.current, { y: 16, opacity: 0, duration: 0.5 }, "<")
 
       if (optionsRef.current) {
         const optionBlocks = optionsRef.current.querySelectorAll(".option-block")
-        tl.from(optionBlocks, { y: 16, opacity: 0, stagger: 0.08, duration: 0.45 }, "<")
-      }
-
-      // Animate subtle background blobs
-      if (blob1Ref.current) {
-        gsap.to(blob1Ref.current, {
-          x: 20,
-          y: 10,
-          scale: 1.05,
-          rotate: 8,
-          duration: 10,
-          ease: "sine.inOut",
-          yoyo: true,
-          repeat: -1,
-        })
-      }
-      if (blob2Ref.current) {
-        gsap.to(blob2Ref.current, {
-          x: -24,
-          y: -12,
-          scale: 1.06,
-          rotate: -10,
-          duration: 12,
-          ease: "sine.inOut",
-          yoyo: true,
-          repeat: -1,
-        })
+        tl.from(optionBlocks, { y: 14, opacity: 0, stagger: 0.08, duration: 0.4 }, "<")
       }
     })
 
@@ -136,15 +99,11 @@ export default function LobbyPage() {
         }
       } catch (err) {
         console.error("[lobby] Error requesting media:", err)
-      } ``
+      }
     }
 
     void ensureStreamFor(isVideoEnabled, isAudioEnabled)
   }, [isVideoEnabled, isAudioEnabled])
-
-  // Handlers for controls ensure user intent drives permissions
-  const toggleVideo = () => setIsVideoEnabled((v) => !v)
-  const toggleAudio = () => setIsAudioEnabled((v) => !v)
 
   const handleJoinMeeting = () => {
     if (meetingCode.trim()) {
@@ -157,73 +116,38 @@ export default function LobbyPage() {
     router.push(`/meeting/${newCode}`)
   }
 
-  // Subtle parallax tilt on the card
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current) return
-    const rect = e.currentTarget.getBoundingClientRect()
-    const relX = e.clientX - rect.left
-    const relY = e.clientY - rect.top
-    const midX = rect.width / 2
-    const midY = rect.height / 2
-    const rotateY = ((relX - midX) / midX) * 6
-    const rotateX = -((relY - midY) / midY) * 6
-    gsap.to(cardRef.current, {
-      rotateY,
-      rotateX,
-      transformPerspective: 900,
-      transformOrigin: "center",
-      duration: 0.25,
-      ease: "power2.out",
-    })
-  }
-
-  const handleMouseLeave = () => {
-    if (!cardRef.current) return
-    gsap.to(cardRef.current, {
-      rotateX: 0,
-      rotateY: 0,
-      duration: 0.5,
-      ease: "power3.out",
-    })
-  }
-
   return (
     <>
-      <div ref={containerRef} className="min-h-screen flex items-center justify-center p-4 relative z-10 overflow-hidden" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
-        {/* Animated gradient blobs and soft vignette */}
-        <div ref={blob1Ref} className="pointer-events-none absolute -z-10 -top-24 -left-24 w-[28rem] h-[28rem] rounded-full bg-gradient-to-tr from-purple-500/25 to-cyan-500/25 blur-[100px]" />
-        <div ref={blob2Ref} className="pointer-events-none absolute -z-10 -bottom-32 -right-24 w-[30rem] h-[30rem] rounded-full bg-gradient-to-tr from-rose-500/20 to-amber-500/20 blur-[110px]" />
-        <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.06),transparent_55%)]" />
-
-        <Card ref={cardRef} className="w-full max-w-5xl p-8 md:p-10 backdrop-blur-xl bg-card/70 border-border/40 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.35)]">
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* Video Preview */}
-            <div className="space-y-5">
-              <Title ref={titleRef}>Ready to join?</Title>
-              <div ref={previewRef}>
-                <VideoPreview
-                  ref={videoRef}
-                  isVideoEnabled={isVideoEnabled}
-                  isAudioEnabled={isAudioEnabled}
-                  meetingCode={meetingCode}
-                  onToggleVideo={toggleVideo}
-                  onToggleAudio={toggleAudio}
-                />
-              </div>
-            </div>
-
-            {/* Meeting Options */}
-            <div ref={optionsRef}>
-              <MeetingOptions
-                meetingCode={meetingCode}
-                setMeetingCode={setMeetingCode}
-                onJoin={handleJoinMeeting}
-                onNew={handleNewMeeting}
+      <LobbyLayout>
+        <div ref={contentRef} className="grid md:grid-cols-2 gap-8">
+          {/* Video Preview */}
+          <div className="space-y-5">
+            <Title ref={titleRef}>Ready to join?</Title>
+            <div ref={previewRef}>
+              <VideoPreview
+                ref={videoRef}
+                isVideoEnabled={isVideoEnabled}
+                isAudioEnabled={isAudioEnabled}
+                displayName={displayName}
+                onToggleVideo={toggleVideo}
+                onToggleAudio={toggleAudio}
               />
             </div>
           </div>
-        </Card>
-      </div>
+
+          {/* Meeting Options */}
+          <div ref={optionsRef}>
+            <MeetingOptions
+              meetingCode={meetingCode}
+              setMeetingCode={setMeetingCode}
+              displayName={displayName}
+              setDisplayName={setDisplayName}
+              onJoin={handleJoinMeeting}
+              onNew={handleNewMeeting}
+            />
+          </div>
+        </div>
+      </LobbyLayout>
     </>
   )
 }

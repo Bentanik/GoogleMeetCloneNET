@@ -95,7 +95,7 @@ function Scene() {
     )
 }
 
-export default function ThreeDLoginBackground() {
+export default function ThreeDBackground() {
     return (
         <div className="fixed inset-0 -z-10">
             <Canvas camera={{ position: [0, 0, 10], fov: 50 }} gl={{ alpha: true, antialias: true }}>
