@@ -1,18 +1,37 @@
 "use client"
 
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Card } from "@/components/ui/card"
+import { EyeIcon, EyeOffIcon } from "lucide-react"
 
 type MeetingOptionsProps = {
     meetingCode: string
     setMeetingCode: (v: string) => void
     displayName: string
     setDisplayName: (v: string) => void
+    meetingPassword: string
+    setMeetingPassword: (v: string) => void
+    hasPassword: boolean
+    setHasPassword: (v: boolean) => void
     onJoin: () => void
     onNew: () => void
 }
 
-export default function MeetingOptions({ meetingCode, setMeetingCode, displayName, setDisplayName, onJoin, onNew }: MeetingOptionsProps) {
+export default function MeetingOptions({
+    meetingCode,
+    setMeetingCode,
+    displayName,
+    setDisplayName,
+    meetingPassword,
+    setMeetingPassword,
+    hasPassword,
+    setHasPassword,
+    onJoin,
+    onNew
+}: MeetingOptionsProps) {
+    const [showPassword, setShowPassword] = useState(false)
     return (
         <div className="space-y-7 flex flex-col justify-center">
             <div className="space-y-3 option-block">
@@ -49,7 +68,60 @@ export default function MeetingOptions({ meetingCode, setMeetingCode, displayNam
 
             <div className="space-y-3 option-block">
                 <h3 className="text-lg font-semibold text-primary">Start a new meeting</h3>
-                <Button onClick={onNew} className="w-full" size="lg" disabled={!displayName.trim()}>Create Meeting</Button>
+
+                {/* Password Options */}
+                <Card className="p-4 space-y-3">
+                    <div className="flex items-center space-x-2">
+                        <input
+                            type="checkbox"
+                            id="hasPassword"
+                            checked={hasPassword}
+                            onChange={(e) => setHasPassword(e.target.checked)}
+                            className="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary focus:ring-0"
+                        />
+                        <label htmlFor="hasPassword" className="text-sm font-medium text-primary cursor-pointer">
+                            Require password for this meeting
+                        </label>
+                    </div>
+
+                    {hasPassword && (
+                        <div className="space-y-2">
+                            <div className="relative">
+                                <Input
+                                    type={showPassword ? "text" : "password"}
+                                    placeholder="Enter meeting password"
+                                    value={meetingPassword}
+                                    onChange={(e) => setMeetingPassword(e.target.value)}
+                                    autoComplete="off"
+                                    className="focus-visible:ring-0 pr-10"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
+                                >
+                                    {showPassword ? (
+                                        <EyeIcon className="w-4 h-4" />
+                                    ) : (
+                                        <EyeOffIcon className="w-4 h-4" />
+                                    )}
+                                </button>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                                Participants will need this password to join the meeting
+                            </p>
+                        </div>
+                    )}
+                </Card>
+
+                <Button
+                    onClick={onNew}
+                    className="w-full"
+                    size="lg"
+                    disabled={!displayName.trim() || (hasPassword && !meetingPassword.trim())}
+                >
+                    Create Meeting
+                </Button>
             </div>
         </div>
     )

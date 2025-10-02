@@ -1,5 +1,4 @@
-using RoomService.Infrastructure.Data;
-using RoomService.Settings;
+﻿using RoomService.Infrastructure.PasswordHash;
 
 namespace RoomService.Bootstraping;
 
@@ -9,22 +8,24 @@ public static class ApplicationServiceExtensions
     {
         services.AddEndpointsApiExplorer();
         services.AddSwagger();
-
         return services;
     }
-
-    private static IServiceCollection AddConfigurationAppSetting(this IServiceCollection services, IConfiguration configuration)
+    private static IServiceCollection AddRedisServices(this IServiceCollection services, IConfiguration configuration)
     {
-        services.Configure<DatabaseSettings>(configuration.GetSection(DatabaseSettings.SectionName));
-        return services;
-    }
+        services.Configure<RedisSettings>(
+            configuration.GetSection(RedisSettings.SectionName));
 
-    private static IServiceCollection AddConfigurationMediatR(this IServiceCollection services)
-    {
-        services.AddMediatR(config => config.RegisterServicesFromAssemblies(
-            typeof(AssemblyReference).Assembly
-        ))
-        .AddValidatorsFromAssembly(AssemblyReference.Assembly, includeInternalTypes: true);
+        var redisSettings = configuration
+            .GetSection(RedisSettings.SectionName)
+            .Get<RedisSettings>() ?? new RedisSettings();
+
+        if (!redisSettings.Enabled)
+            return services;
+
+        services.AddSingleton<IConnectionMultiplexer>(_ =>
+            ConnectionMultiplexer.Connect(redisSettings.ConnectionString));
+
+        services.AddSingleton<IResponseCacheService, ResponseCacheService>();
 
         return services;
     }
@@ -32,12 +33,10 @@ public static class ApplicationServiceExtensions
     public static IHostApplicationBuilder AddApplicationServices(this IHostApplicationBuilder builder)
     {
         builder.Services
-               .AddSwaggerServices()
-               .AddConfigurationMediatR()
-               .AddConfigurationAppSetting(builder.Configuration);
+            .AddSwaggerServices()
+            .AddRedisServices(builder.Configuration);
 
-        builder.Services.AddSingleton<AppDbContext>();
-
+        builder.Services.AddSingleton<IPasswordHashService, PasswordHashService>();
         return builder;
     }
 }

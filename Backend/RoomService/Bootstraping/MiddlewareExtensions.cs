@@ -1,5 +1,3 @@
-using RoomService.Apis;
-
 namespace RoomService.Bootstraping;
 
 public static class MiddlewareExtensions
@@ -13,6 +11,6 @@ public static class MiddlewareExtensions
 
         app.UseHttpsRedirection();
 
-        app.MapAuthApi();
+        app.MapRoomApi();
     }
 }

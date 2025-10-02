@@ -26,6 +26,10 @@ export default function LobbyPage() {
   const setStream = useLobbyStore((s) => s.setStream)
   const toggleVideo = useLobbyStore((s) => s.toggleVideo)
   const toggleAudio = useLobbyStore((s) => s.toggleAudio)
+  const meetingPassword = useLobbyStore((s) => s.meetingPassword)
+  const setMeetingPassword = useLobbyStore((s) => s.setMeetingPassword)
+  const hasPassword = useLobbyStore((s) => s.hasPassword)
+  const setHasPassword = useLobbyStore((s) => s.setHasPassword)
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -128,8 +132,13 @@ export default function LobbyPage() {
 
   const handleNewMeeting = useCallback(() => {
     const newCode = Math.random().toString(36).substring(2, 10)
+    console.log('Creating meeting with:', {
+      code: newCode,
+      hasPassword,
+      password: hasPassword ? meetingPassword : undefined
+    })
     router.push(`/meeting/${newCode}`)
-  }, [router])
+  }, [router, hasPassword, meetingPassword])
 
   return (
     <>
@@ -157,6 +166,10 @@ export default function LobbyPage() {
               setMeetingCode={setMeetingCode}
               displayName={displayName}
               setDisplayName={setDisplayName}
+              meetingPassword={meetingPassword}
+              setMeetingPassword={setMeetingPassword}
+              hasPassword={hasPassword}
+              setHasPassword={setHasPassword}
               onJoin={handleJoinMeeting}
               onNew={handleNewMeeting}
             />
