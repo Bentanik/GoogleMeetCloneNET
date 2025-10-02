@@ -1,4 +1,4 @@
-namespace GoogleMeetCloneNET.Settings;
+namespace RoomService.Settings;
 
 public class DatabaseSettings
 {

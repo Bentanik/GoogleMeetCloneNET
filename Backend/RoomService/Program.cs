@@ -1,3 +1,5 @@
+using RoomService.Bootstraping;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddApplicationServices();

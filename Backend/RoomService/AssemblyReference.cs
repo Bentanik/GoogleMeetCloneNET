@@ -1,4 +1,4 @@
-namespace GoogleMeetCloneNET;
+namespace RoomService;
 
 public class AssemblyReference
 {

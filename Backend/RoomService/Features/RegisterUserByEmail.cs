@@ -1,4 +1,6 @@
-namespace GoogleMeetCloneNET.Features;
+using RoomService.Infrastructure.Data;
+
+namespace RoomService.Features;
 
 public record RegisterUserByEmailCommand(string Email, string Password, string FullName) : IRequest<Unit>;
 

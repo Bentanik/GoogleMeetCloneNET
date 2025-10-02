@@ -1,4 +1,6 @@
-namespace GoogleMeetCloneNET.Bootstraping;
+using RoomService.Apis;
+
+namespace RoomService.Bootstraping;
 
 public static class MiddlewareExtensions
 {

@@ -1,6 +1,6 @@
 using Swashbuckle.AspNetCore.SwaggerUI;
 
-namespace GoogleMeetCloneNET.Bootstraping;
+namespace RoomService.Bootstraping;
 
 public static class SwaggerExtensions
 {

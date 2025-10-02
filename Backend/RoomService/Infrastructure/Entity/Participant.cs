@@ -1,4 +1,4 @@
-﻿namespace GoogleMeetCloneNET.Infrastructure.Entity;
+﻿namespace RoomService.Infrastructure.Entity;
 
 public class Participant
 {

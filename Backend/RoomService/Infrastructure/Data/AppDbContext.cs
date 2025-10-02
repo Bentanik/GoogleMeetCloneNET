@@ -1,4 +1,7 @@
-namespace GoogleMeetCloneNET.Infrastructure.Data;
+using RoomService.Infrastructure.Entity;
+using RoomService.Settings;
+
+namespace RoomService.Infrastructure.Data;
 
 public class AppDbContext
 {

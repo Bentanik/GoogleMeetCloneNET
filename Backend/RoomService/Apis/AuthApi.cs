@@ -1,6 +1,6 @@
-using GoogleMeetCloneNET.Apis.Requests.Auth;
+using RoomService.Apis.Requests.Auth;
 
-namespace GoogleMeetCloneNET.Apis;
+namespace RoomService.Apis;
 
 public static class AuthApi
 {

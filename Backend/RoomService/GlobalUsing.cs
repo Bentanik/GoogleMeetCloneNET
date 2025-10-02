@@ -10,10 +10,10 @@ global using MongoDB.Bson.Serialization.Attributes;
 
 
 // Project namespaces
-global using GoogleMeetCloneNET.Settings;
-global using GoogleMeetCloneNET.Apis;
-global using GoogleMeetCloneNET.Bootstraping;
-global using GoogleMeetCloneNET.Infrastructure.Data;
-global using GoogleMeetCloneNET.Infrastructure.Entity;
-global using GoogleMeetCloneNET.Features;
+global using RoomService.Settings;
+global using RoomService.Apis;
+global using RoomService.Bootstraping;
+global using RoomService.Infrastructure.Data;
+global using RoomService.Infrastructure.Entity;
+global using RoomService.Features;
 
