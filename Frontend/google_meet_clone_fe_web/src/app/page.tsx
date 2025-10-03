@@ -9,6 +9,7 @@ import VideoPreview from "@/components/widget/video-preview"
 import MeetingOptions from "@/components/widget/meeting-options"
 import { RoomService } from "@/services/room"
 import { useLobbyStore } from "@/stores/zustand/lobby"
+import { useMediaStore } from "@/stores/zustand/media"
 
 export default function LobbyPage() {
   const router = useRouter()
@@ -19,14 +20,14 @@ export default function LobbyPage() {
   const contentRef = useRef<HTMLDivElement>(null)
   const meetingCode = useLobbyStore((s) => s.meetingCode)
   const setMeetingCode = useLobbyStore((s) => s.setMeetingCode)
-  const isVideoEnabled = useLobbyStore((s) => s.isVideoEnabled)
-  const isAudioEnabled = useLobbyStore((s) => s.isAudioEnabled)
+  const isVideoEnabled = useMediaStore((s) => s.isVideoEnabled)
+  const isAudioEnabled = useMediaStore((s) => s.isAudioEnabled)
   const displayName = useLobbyStore((s) => s.displayName)
   const setDisplayName = useLobbyStore((s) => s.setDisplayName)
-  const stream = useLobbyStore((s) => s.stream)
-  const setStream = useLobbyStore((s) => s.setStream)
-  const toggleVideo = useLobbyStore((s) => s.toggleVideo)
-  const toggleAudio = useLobbyStore((s) => s.toggleAudio)
+  const stream = useMediaStore((s) => s.stream)
+  const setStream = useMediaStore((s) => s.setStream)
+  const toggleVideo = useMediaStore((s) => s.toggleVideo)
+  const toggleAudio = useMediaStore((s) => s.toggleAudio)
   const meetingPassword = useLobbyStore((s) => s.meetingPassword)
   const setMeetingPassword = useLobbyStore((s) => s.setMeetingPassword)
   const hasPassword = useLobbyStore((s) => s.hasPassword)
@@ -50,82 +51,24 @@ export default function LobbyPage() {
     return () => ctx.revert()
   }, [])
 
-  // Cleanup media streams on unmount
+  const requestStream = useMediaStore((s) => s.requestStream)
+  const stopStream = useMediaStore((s) => s.stopStream)
+
+  // react to media flags changes by delegating to media store
   useEffect(() => {
+    void requestStream(isVideoEnabled, isAudioEnabled)
+  }, [isVideoEnabled, isAudioEnabled, requestStream])
+
+  // attach store stream to video ref when available and cleanup on unmount
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.srcObject = stream ?? null
+    }
     return () => {
-      if (stream) {
-        stream.getTracks().forEach((track) => {
-          track.stop()
-          track.enabled = false
-        })
-        setStream(null)
-      }
-      // Clear video element
-      if (videoRef.current) {
-        videoRef.current.srcObject = null
-      }
+      if (videoRef.current) videoRef.current.srcObject = null
+      // do not stop stream here; store manages lifecycle
     }
-  }, [stream, setStream])
-
-  // Optimized stream management with proper cleanup
-  const ensureStreamFor = useCallback(async (wantVideo: boolean, wantAudio: boolean) => {
-    const hasVideo = !!stream?.getVideoTracks().length
-    const hasAudio = !!stream?.getAudioTracks().length
-
-    // If no desired media types, stop and clear
-    if (!wantVideo && !wantAudio) {
-      if (stream) {
-        stream.getTracks().forEach((t) => {
-          t.stop()
-          t.enabled = false
-        })
-      }
-      setStream(null)
-      if (videoRef.current) {
-        videoRef.current.srcObject = null
-      }
-      return
-    }
-
-    // If current stream already matches desired types, just enable/disable tracks
-    if (stream && hasVideo === wantVideo && hasAudio === wantAudio) {
-      stream.getVideoTracks().forEach((t) => (t.enabled = wantVideo))
-      stream.getAudioTracks().forEach((t) => (t.enabled = wantAudio))
-      if (videoRef.current && wantVideo) {
-        videoRef.current.srcObject = stream
-      }
-      if (videoRef.current && !wantVideo) {
-        videoRef.current.srcObject = null
-      }
-      return
-    }
-
-    // Otherwise, (re)request with the exact desired constraints
-    try {
-      const newStream = await navigator.mediaDevices.getUserMedia({
-        video: wantVideo,
-        audio: wantAudio,
-      })
-      // Stop old stream if exists
-      if (stream) {
-        stream.getTracks().forEach((t) => {
-          t.stop()
-          t.enabled = false
-        })
-      }
-      setStream(newStream)
-      // Attach to video element only if we have video
-      if (videoRef.current) {
-        videoRef.current.srcObject = wantVideo ? newStream : null
-      }
-    } catch (err) {
-      console.error("[lobby] Error requesting media:", err)
-    }
-  }, [stream, setStream])
-
-  useEffect(() => {
-    void ensureStreamFor(isVideoEnabled, isAudioEnabled)
-  }, [isVideoEnabled, isAudioEnabled, ensureStreamFor])
+  }, [stream])
 
   const handleJoinMeeting = useCallback(async () => {
     if (!meetingCode.trim()) return

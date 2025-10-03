@@ -24,6 +24,12 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 
 To learn more about Next.js, take a look at the following resources:
 
+## Notes about meeting layout and pagination
+
+- The meeting grid uses a responsive CSS grid (auto-fit + minmax) so participant tiles shrink to fit the available space.
+- To avoid vertical overflow on very large calls, a simple frontend pagination is applied when the participant count exceeds a threshold (PAGE_SIZE = 16 by default). This keeps the UI performant and avoids layout issues while still allowing users to page through participants.
+- You can adjust the PAGE_SIZE in `src/app/meeting/[code]/page.tsx` to change how many participants show per page.
+
 - [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
 - [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 

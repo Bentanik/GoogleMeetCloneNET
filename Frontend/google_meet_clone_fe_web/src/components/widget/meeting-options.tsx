@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { EyeIcon, EyeOffIcon } from "lucide-react"
+import { Video, VideoOff, Mic, MicOff } from "lucide-react"
+import { useMediaStore } from "@/stores/zustand/media"
 
 type MeetingOptionsProps = {
     meetingCode: string
@@ -36,6 +38,7 @@ export default function MeetingOptions({
     isJoining = false,
 }: MeetingOptionsProps) {
     const [showPassword, setShowPassword] = useState(false)
+
     return (
         <div className="space-y-7 flex flex-col justify-center">
             <div className="space-y-3 option-block">
