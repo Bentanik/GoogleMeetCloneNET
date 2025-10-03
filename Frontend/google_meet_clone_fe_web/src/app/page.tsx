@@ -1,12 +1,13 @@
 "use client"
 
-import { useEffect, useRef, useCallback } from "react"
+import { useEffect, useRef, useCallback, useState } from "react"
 import { useRouter } from "next/navigation"
 import { gsap } from "gsap"
 import LobbyLayout from "@/components/layout/lobby-layout"
 import Title from "@/components/widget/title"
 import VideoPreview from "@/components/widget/video-preview"
 import MeetingOptions from "@/components/widget/meeting-options"
+import { RoomService } from "@/services/room"
 import { useLobbyStore } from "@/stores/zustand/lobby"
 
 export default function LobbyPage() {
@@ -30,6 +31,8 @@ export default function LobbyPage() {
   const setMeetingPassword = useLobbyStore((s) => s.setMeetingPassword)
   const hasPassword = useLobbyStore((s) => s.hasPassword)
   const setHasPassword = useLobbyStore((s) => s.setHasPassword)
+  const [isCreating, setIsCreating] = useState(false)
+  const [isJoining, setIsJoining] = useState(false)
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -124,20 +127,31 @@ export default function LobbyPage() {
     void ensureStreamFor(isVideoEnabled, isAudioEnabled)
   }, [isVideoEnabled, isAudioEnabled, ensureStreamFor])
 
-  const handleJoinMeeting = useCallback(() => {
-    if (meetingCode.trim()) {
+  const handleJoinMeeting = useCallback(async () => {
+    if (!meetingCode.trim()) return
+    setIsJoining(true)
+    try {
       router.push(`/meeting/${meetingCode}`)
+    } finally {
+      setIsJoining(false)
     }
   }, [meetingCode, router])
 
-  const handleNewMeeting = useCallback(() => {
+  const handleNewMeeting = useCallback(async () => {
     const newCode = Math.random().toString(36).substring(2, 10)
-    console.log('Creating meeting with:', {
-      code: newCode,
-      hasPassword,
-      password: hasPassword ? meetingPassword : undefined
-    })
-    router.push(`/meeting/${newCode}`)
+    setIsCreating(true)
+    try {
+      const payload = {
+        password: hasPassword ? meetingPassword : undefined,
+      }
+      const res = await RoomService.createRoom(payload)
+      const roomCode = res.data?.roomCode ?? newCode
+      router.push(`/meeting/${roomCode}`)
+    } catch (err) {
+      console.error("Failed to create room:", err)
+    } finally {
+      setIsCreating(false)
+    }
   }, [router, hasPassword, meetingPassword])
 
   return (
@@ -172,6 +186,8 @@ export default function LobbyPage() {
               setHasPassword={setHasPassword}
               onJoin={handleJoinMeeting}
               onNew={handleNewMeeting}
+              isCreating={isCreating}
+              isJoining={isJoining}
             />
           </div>
         </div>

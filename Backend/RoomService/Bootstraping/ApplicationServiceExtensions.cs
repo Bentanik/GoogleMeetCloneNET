@@ -1,6 +1,4 @@
-﻿using RoomService.Infrastructure.PasswordHash;
-
-namespace RoomService.Bootstraping;
+﻿namespace RoomService.Bootstraping;
 
 public static class ApplicationServiceExtensions
 {

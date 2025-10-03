@@ -17,6 +17,8 @@ type MeetingOptionsProps = {
     setHasPassword: (v: boolean) => void
     onJoin: () => void
     onNew: () => void
+    isCreating?: boolean
+    isJoining?: boolean
 }
 
 export default function MeetingOptions({
@@ -29,7 +31,9 @@ export default function MeetingOptions({
     hasPassword,
     setHasPassword,
     onJoin,
-    onNew
+    onNew,
+    isCreating = false,
+    isJoining = false,
 }: MeetingOptionsProps) {
     const [showPassword, setShowPassword] = useState(false)
     return (
@@ -53,7 +57,9 @@ export default function MeetingOptions({
                         onKeyDown={(e) => e.key === "Enter" && onJoin()}
                         className="flex-1 focus-visible:ring-0"
                     />
-                    <Button onClick={onJoin} disabled={!meetingCode.trim() || !displayName.trim()}>Join</Button>
+                    <Button onClick={onJoin} disabled={!meetingCode.trim() || !displayName.trim() || isJoining}>
+                        {isJoining ? "Joining..." : "Join"}
+                    </Button>
                 </div>
             </div>
 
@@ -118,9 +124,9 @@ export default function MeetingOptions({
                     onClick={onNew}
                     className="w-full"
                     size="lg"
-                    disabled={!displayName.trim() || (hasPassword && !meetingPassword.trim())}
+                    disabled={!displayName.trim() || (hasPassword && !meetingPassword.trim()) || isCreating}
                 >
-                    Create Meeting
+                    {isCreating ? "Creating..." : "Create Meeting"}
                 </Button>
             </div>
         </div>

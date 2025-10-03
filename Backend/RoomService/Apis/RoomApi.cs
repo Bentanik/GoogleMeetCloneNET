@@ -7,6 +7,7 @@ public static class RoomApi
         builder.MapGroup("/api/v1/rooms")
                .MapRoomEndpoints()
                .WithTags("Room Api");
+
         return builder;
     }
 
@@ -41,7 +42,7 @@ public static class RoomApi
                 await responseCache.SetAsync($"room:{roomCode}:password", hashedPassword, TimeSpan.FromHours(24));
             }
 
-            var mediaServerUrl = Environment.GetEnvironmentVariable("MEDIA_SERVER_URL") ?? "http://localhost:3001";
+            var mediaServerUrl = Environment.GetEnvironmentVariable("MEDIA_SERVER_URL") ?? "http://localhost:5002";
 
             return Results.Ok(new CreateRoomResponse(roomCode, roomId, mediaServerUrl));
         })
@@ -83,7 +84,7 @@ public static class RoomApi
             var participantCountStr = await responseCache.GetAsync($"room:{request.RoomCode}:participants");
             var count = !string.IsNullOrEmpty(participantCountStr) ? int.Parse(participantCountStr) : 0;
 
-            var mediaServerUrl = Environment.GetEnvironmentVariable("MEDIA_SERVER_URL") ?? "http://localhost:3001";
+            var mediaServerUrl = Environment.GetEnvironmentVariable("MEDIA_SERVER_URL") ?? "http://localhost:5002";
 
             return Results.Ok(new JoinRoomResponse(
                 Success: true,
