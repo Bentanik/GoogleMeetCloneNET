@@ -7,10 +7,8 @@ import indexRouter from "@/routes";
 const app = express();
 app.use(bodyParser.json());
 
-// Swagger UI
 const swaggerSpec = buildSwaggerSpec();
 app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-
 app.use("/api", indexRouter);
 
 export default app;
