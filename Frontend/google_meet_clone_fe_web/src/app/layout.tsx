@@ -21,8 +21,8 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Google Meet NET Clone",
-  description: "Google Meet NET Clone",
+  title: "Google Meet Clone",
+  description: "Google Meet Clone",
 };
 
 export default function RootLayout({

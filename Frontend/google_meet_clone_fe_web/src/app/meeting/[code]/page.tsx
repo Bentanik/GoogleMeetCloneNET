@@ -1,3 +1,4 @@
+// MeetingPage.tsx
 "use client"
 
 import { useEffect, useRef, useState } from "react"
@@ -10,28 +11,37 @@ import ChatSidebar from "@/components/widget/chat-sidebar"
 import ParticipantsSidebar from "@/components/widget/participants-sidebar"
 import { useMediaStore } from "@/stores/zustand/media"
 
+interface Participant {
+    id: string
+    name: string
+    stream: MediaStream | null
+    isLocal: boolean
+    isHost?: boolean
+    isMuted?: boolean
+}
+
 export default function MeetingPage() {
     const params = useParams()
     const meetingCode = Array.isArray(params.code) ? params.code[0] : params.code ?? ""
     const containerRef = useRef<HTMLDivElement>(null)
 
-    // use central store for media toggles so controls and options stay in sync
     const isVideoEnabled = useMediaStore((s) => s.isVideoEnabled)
     const isAudioEnabled = useMediaStore((s) => s.isAudioEnabled)
-    const isScreenSharing = useMediaStore((s) => s.isScreenSharing)
     const stream = useMediaStore((s) => s.stream)
+    const requestStream = useMediaStore((s) => s.requestStream)
+    const stopStream = useMediaStore((s) => s.stopStream)
+
     const [isChatOpen, setIsChatOpen] = useState(false)
     const [isParticipantsOpen, setIsParticipantsOpen] = useState(false)
-    const [participants, setParticipants] = useState<any[]>([
+
+    const [participants, setParticipants] = useState<Participant[]>([
         { id: "local", name: "You", stream: null, isLocal: true, isHost: true, isMuted: false },
     ])
-    // Pagination for large participant sets (frontend)
-    // NOTE: PAGE_SIZE controls how many participant tiles are shown per page.
-    // We use frontend pagination to avoid vertical overflow and keep the layout performant
-    // when there are many participants. Adjust PAGE_SIZE here to change behavior.
-    const [page, setPage] = useState(1)
-    const PAGE_SIZE = 16
 
+    const [page, setPage] = useState(1)
+    const [tilesPerPage, setTilesPerPage] = useState(16)
+
+    // Animate & simulate some participants
     useEffect(() => {
         const ctx = gsap.context(() => {
             gsap.from(containerRef.current, {
@@ -41,34 +51,29 @@ export default function MeetingPage() {
             })
         })
 
-        // Simulate a couple of participants joining (only when not already populated)
-        let timer1: ReturnType<typeof setTimeout> | null = null
-        let timer2: ReturnType<typeof setTimeout> | null = null
-        if (participants.length <= 1) {
-            timer1 = setTimeout(() => {
-                setParticipants((prev) => [
-                    ...prev,
-                    { id: "user-1", name: "Alex Chen", stream: null, isLocal: false, isMuted: false },
-                ])
-            }, 2000)
+        const timer1 = setTimeout(() => {
+            setParticipants((prev) => [
+                ...prev,
+                { id: "user-1", name: "Alex Chen", stream: null, isLocal: false, isMuted: false },
+            ])
+        }, 2000)
 
-            timer2 = setTimeout(() => {
-                setParticipants((prev) => [
-                    ...prev,
-                    { id: "user-2", name: "Sarah Johnson", stream: null, isLocal: false, isMuted: false },
-                ])
-            }, 4000)
-        }
+        const timer2 = setTimeout(() => {
+            setParticipants((prev) => [
+                ...prev,
+                { id: "user-2", name: "Sarah Johnson", stream: null, isLocal: false, isMuted: false },
+            ])
+        }, 4000)
 
         return () => {
             ctx.revert()
-            if (timer1) clearTimeout(timer1)
-            if (timer2) clearTimeout(timer2)
+            clearTimeout(timer1)
+            clearTimeout(timer2)
         }
     }, [])
 
     const simulateHundred = () => {
-        const simulated = [
+        const simulated: Participant[] = [
             { id: "local", name: "You", stream: null, isLocal: true, isHost: true, isMuted: false },
         ]
         for (let i = 1; i <= 99; i++) {
@@ -78,61 +83,67 @@ export default function MeetingPage() {
         setPage(1)
     }
 
-    // Keep the local participant's stream in sync with media store stream
+    // Sync local stream
     useEffect(() => {
         setParticipants((prev) =>
             prev.map((p) => (p.isLocal ? { ...p, stream: stream ?? null } : p))
         )
-
-        // When stream or media flags change, enable/disable tracks accordingly
         if (stream) {
             try {
                 stream.getVideoTracks().forEach((t) => (t.enabled = isVideoEnabled))
                 stream.getAudioTracks().forEach((t) => (t.enabled = isAudioEnabled))
-            } catch (err) {
-                // ignore if tracks are not available
-            }
+            } catch { }
         }
     }, [stream, isVideoEnabled, isAudioEnabled])
 
-    // Delegate stream lifecycle to media store
-    const requestStream = useMediaStore((s) => s.requestStream)
-    const stopStream = useMediaStore((s) => s.stopStream)
     useEffect(() => {
         void requestStream(isVideoEnabled, isAudioEnabled)
-
-        if (!isVideoEnabled && !isAudioEnabled) {
-            stopStream()
-        }
+        if (!isVideoEnabled && !isAudioEnabled) stopStream()
     }, [isVideoEnabled, isAudioEnabled, requestStream, stopStream])
 
+    // Responsive tilesPerPage based on container size
+    useEffect(() => {
+        const handleResize = () => {
+            if (!containerRef.current) return
+            const W = containerRef.current.offsetWidth
+            const H = containerRef.current.offsetHeight - 120
+
+            const minTileW = 180
+            const minTileH = 100
+            const gap = 16
+
+            const cols = Math.max(1, Math.floor((W + gap) / (minTileW + gap)))
+            const rows = Math.max(1, Math.floor((H + gap) / (minTileH + gap)))
+
+            setTilesPerPage(rows * cols)
+        }
+
+        handleResize()
+        window.addEventListener("resize", handleResize)
+        return () => window.removeEventListener("resize", handleResize)
+    }, [])
+
+    // Toggle sidebars
     const handleToggleChat = () => {
         setIsChatOpen(!isChatOpen)
-        if (!isChatOpen && isParticipantsOpen) {
-            setIsParticipantsOpen(false)
-        }
+        if (!isChatOpen && isParticipantsOpen) setIsParticipantsOpen(false)
     }
 
     const handleToggleParticipants = () => {
         setIsParticipantsOpen(!isParticipantsOpen)
-        if (!isParticipantsOpen && isChatOpen) {
-            setIsChatOpen(false)
-        }
+        if (!isParticipantsOpen && isChatOpen) setIsChatOpen(false)
     }
 
-    // Ensure current page is valid when participants change
+    // Ensure page is valid
     useEffect(() => {
-        const totalPages = Math.max(1, Math.ceil(participants.length / PAGE_SIZE))
+        const totalPages = Math.max(1, Math.ceil(participants.length / tilesPerPage))
         if (page > totalPages) setPage(totalPages)
-    }, [participants.length, page])
+    }, [participants.length, tilesPerPage, page])
 
-    const totalPages = Math.max(1, Math.ceil(participants.length / PAGE_SIZE))
-    const startIdx = (page - 1) * PAGE_SIZE
-    const endIdx = startIdx + PAGE_SIZE
-    const participantsToShow = participants.length > PAGE_SIZE ? participants.slice(startIdx, endIdx) : participants
-
-    // Pagination props to pass down to MeetingControls
-    // Keyboard navigation and UI moved into MeetingControls
+    const totalPages = Math.max(1, Math.ceil(participants.length / tilesPerPage))
+    const startIdx = (page - 1) * tilesPerPage
+    const endIdx = startIdx + tilesPerPage
+    const participantsToShow = participants.slice(startIdx, endIdx)
 
     return (
         <>
@@ -147,8 +158,6 @@ export default function MeetingPage() {
                     />
                 </div>
 
-                {/* Pagination UI moved into MeetingControls for consistent placement */}
-
                 <MeetingControls
                     onToggleChat={handleToggleChat}
                     onToggleParticipants={handleToggleParticipants}
@@ -158,7 +167,7 @@ export default function MeetingPage() {
                     totalPages={totalPages}
                     participantsCount={participants.length}
                 />
-                {/* Debug: simulate 100 participants (floating button) */}
+
                 <button
                     onClick={simulateHundred}
                     title="Simulate 100 participants"

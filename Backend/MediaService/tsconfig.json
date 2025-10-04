@@ -6,15 +6,11 @@
     "outDir": "./dist",
     "strict": true,
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
     "baseUrl": "./",
     "paths": {
-      "@config/*": ["src/config/*"],
-      "@entities/*": ["src/entities/*"],
-      "@gateways/*": ["src/gateways/*"],
-      "@usecases/*": ["src/usecases/*"],
-      "@interfaces/*": ["src/interfaces/*"],
-      "@services/*": ["src/services/*"]
+      "@/*": ["src/*"]
     }
   }
 }
