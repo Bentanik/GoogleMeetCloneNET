@@ -7,7 +7,6 @@ export interface CreateRoomRequest {
 export interface CreateRoomResponse {
   roomCode: string;
   roomId: string;
-  mediaServerUrl: string;
 }
 
 export interface JoinRoomRequest {
@@ -17,7 +16,6 @@ export interface JoinRoomRequest {
 
 export interface JoinRoomResponse {
   success: boolean;
-  mediaServerUrl: string;
   participantCount: number;
 }
 

@@ -13,8 +13,7 @@ const apis = getApiGlobs();
 
 function getDefaultServers() {
   const http = process.env.SWAGGER_HTTP_SERVER || "http://localhost:5002";
-  const https = process.env.SWAGGER_HTTPS_SERVER || "https://localhost:5052";
-  return [{ url: http }, { url: https }];
+  return [{ url: http }];
 }
 
 export function buildSwaggerSpec(req?: Request) {
@@ -25,8 +24,7 @@ export function buildSwaggerSpec(req?: Request) {
   const info = {
     title: "Media Service API",
     version: "1.0.0",
-    description:
-      "Media service implemented with Clean Architecture and SOLID principles",
+    description: "Media service",
   };
 
   try {

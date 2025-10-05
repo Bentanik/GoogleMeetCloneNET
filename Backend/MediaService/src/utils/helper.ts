@@ -1,7 +1,7 @@
-export function now(): string {
-  return new Date().toISOString();
+export function log(message: string) {
+  console.log(`[${new Date().toISOString()}] ${message}`);
 }
 
-export function log(msg: string) {
-  console.log(`[Helper] ${now()} ${msg}`);
+export function now(): string {
+  return new Date().toISOString();
 }

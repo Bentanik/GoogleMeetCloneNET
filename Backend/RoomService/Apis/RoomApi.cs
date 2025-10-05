@@ -1,4 +1,6 @@
-﻿namespace RoomService.Apis;
+﻿using RoomService.Helpers;
+
+namespace RoomService.Apis;
 
 public static class RoomApi
 {
@@ -31,20 +33,17 @@ public static class RoomApi
                 IsActive: true
             );
 
-            // Store in Redis with 24h TTL
-            var roomJson = JsonSerializer.Serialize(room);
-            await responseCache.SetAsync($"room:{roomCode}", roomJson, TimeSpan.FromHours(24));
+            var redisHelper = new RedisRoomHelper(responseCache);
+            await redisHelper.SaveRoomAsync(room, TimeSpan.FromHours(24));
 
             // Store password if provided
             if (!string.IsNullOrEmpty(request.Password))
             {
                 var hashedPassword = passwordHash.HashPassword(request.Password);
-                await responseCache.SetAsync($"room:{roomCode}:password", hashedPassword, TimeSpan.FromHours(24));
+                await redisHelper.SaveRoomPasswordAsync(roomCode, hashedPassword, TimeSpan.FromHours(24));
             }
 
-            var mediaServerUrl = Environment.GetEnvironmentVariable("MEDIA_SERVER_URL") ?? "http://localhost:5002";
-
-            return Results.Ok(new CreateRoomResponse(roomCode, roomId, mediaServerUrl));
+            return Results.Ok(new CreateRoomResponse(roomCode, roomId));
         })
         .WithName("CreateRoom")
         .Produces<CreateRoomResponse>(StatusCodes.Status200OK)
@@ -56,18 +55,19 @@ public static class RoomApi
             [FromServices] IResponseCacheService responseCache,
             [FromServices] IPasswordHashService passwordHash) =>
         {
+            var redisHelper = new RedisRoomHelper(responseCache);
+
             // Check if room exists
-            var roomJson = await responseCache.GetAsync($"room:{request.RoomCode}");
+            var roomJson = await redisHelper.GetRoomJsonAsync(request.RoomCode);
             if (string.IsNullOrEmpty(roomJson))
             {
                 return Results.BadRequest(new { error = "Room not found" });
             }
 
             // Check password if required
-            var storedPasswordHash = await responseCache.GetAsync($"room:{request.RoomCode}:password");
+            var storedPasswordHash = await redisHelper.GetRoomPasswordAsync(request.RoomCode);
             if (!string.IsNullOrEmpty(storedPasswordHash))
             {
-                // Room has password, verify it
                 if (string.IsNullOrEmpty(request.Password))
                 {
                     return Results.Unauthorized();
@@ -81,14 +81,10 @@ public static class RoomApi
             }
 
             // Get participant count
-            var participantCountStr = await responseCache.GetAsync($"room:{request.RoomCode}:participants");
-            var count = !string.IsNullOrEmpty(participantCountStr) ? int.Parse(participantCountStr) : 0;
-
-            var mediaServerUrl = Environment.GetEnvironmentVariable("MEDIA_SERVER_URL") ?? "http://localhost:5002";
+            var count = await redisHelper.GetParticipantCountAsync(request.RoomCode);
 
             return Results.Ok(new JoinRoomResponse(
                 Success: true,
-                MediaServerUrl: mediaServerUrl,
                 ParticipantCount: count
             ));
         })
@@ -102,7 +98,8 @@ public static class RoomApi
             string code,
             [FromServices] IResponseCacheService responseCache) =>
         {
-            var roomJson = await responseCache.GetAsync($"room:{code}");
+            var redisHelper = new RedisRoomHelper(responseCache);
+            var roomJson = await redisHelper.GetRoomJsonAsync(code);
 
             if (string.IsNullOrEmpty(roomJson))
             {
@@ -115,10 +112,7 @@ public static class RoomApi
                 return Results.NotFound(new { error = "Invalid room data" });
             }
 
-            // Get current participant count
-            var participantCountStr = await responseCache.GetAsync($"room:{code}:participants");
-            var count = !string.IsNullOrEmpty(participantCountStr) ? int.Parse(participantCountStr) : 0;
-
+            var count = await redisHelper.GetParticipantCountAsync(code);
             var updatedRoom = room with { ParticipantCount = count };
 
             return Results.Ok(updatedRoom);
@@ -132,9 +126,8 @@ public static class RoomApi
             string code,
             [FromServices] IResponseCacheService responseCache) =>
         {
-            await responseCache.RemoveAsync($"room:{code}");
-            await responseCache.RemoveAsync($"room:{code}:password");
-            await responseCache.RemoveAsync($"room:{code}:participants");
+            var redisHelper = new RedisRoomHelper(responseCache);
+            await redisHelper.DeleteRoomAsync(code);
 
             return Results.Ok(new { message = "Room deleted" });
         })
