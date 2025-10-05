@@ -2,12 +2,12 @@ import * as mediasoup from "mediasoup";
 import Redis from "ioredis";
 import { log } from "@/utils/helper";
 
-// Redis setup
 export const redis = new Redis({
   host: process.env.REDIS_HOST || "localhost",
   port: parseInt(process.env.REDIS_PORT || "6379"),
+  username: process.env.REDIS_USERNAME || "default",
+  password: process.env.REDIS_PASSWORD || undefined,
 });
-
 // Participant interface
 export interface Participant {
   id: string;

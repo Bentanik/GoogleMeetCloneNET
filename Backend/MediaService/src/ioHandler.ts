@@ -36,7 +36,6 @@ export function initSocket(httpServer: any) {
         room.participants.set(socket.id, participant);
         currentRoom = room;
         socket.join(data.roomCode);
-
         await redis.set(
           `room:${data.roomCode}:participants`,
           room.participants.size
